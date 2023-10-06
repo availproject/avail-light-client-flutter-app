@@ -1,17 +1,34 @@
-import 'dart:ffi';
+import 'dart:ffi' as ffi;
 import 'dart:isolate';
+import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
-typedef RunNode = bool Function();
-typedef RunNodeFFI = Bool Function();
+typedef RunNode = bool Function(
+  ffi.Pointer<ffi.Uint8> cfg,
+);
+typedef RunNodeFFI = ffi.Bool Function(
+  ffi.Pointer<ffi.Uint8> cfg,
+);
 
 typedef GetBlock = int Function();
-typedef GetBlockFFI = Uint32 Function();
+typedef GetBlockFFI = ffi.Uint32 Function();
 
 typedef GetConfidence = double Function(int);
-typedef GetConfidenceFFI = Double Function(Uint32);
+typedef GetConfidenceFFI = ffi.Double Function(ffi.Uint32);
+Future<void> _startLightClientCall(String str) async {
+  ffi.Pointer<ffi.Uint8> nativeConfig = str.toNativeUtf8().cast<ffi.Uint8>();
+  final lightClientLib = ffi.DynamicLibrary.open("libavail_light_2.so");
+
+  ffi.DynamicLibrary.open("libc++_shared.so");
+  RunNode function = lightClientLib
+      .lookup<ffi.NativeFunction<RunNodeFFI>>("start_light_node")
+      .asFunction();
+  function(nativeConfig);
+}
 
 class AvailHomePage extends StatefulWidget {
   const AvailHomePage({
@@ -26,7 +43,7 @@ class AvailHomePage extends StatefulWidget {
 }
 
 class _AvailHomePageState extends State<AvailHomePage> {
-  late DynamicLibrary lightClientLib;
+  late ffi.DynamicLibrary lightClientLib;
   int _finalizedBlock = 0;
   int _unfinalizedBlock = 0;
   double _blockConfidence = 0;
@@ -57,8 +74,8 @@ class _AvailHomePageState extends State<AvailHomePage> {
 
   @override
   void initState() {
-    lightClientLib = DynamicLibrary.open("libavail_light_2.so");
-    DynamicLibrary.open("libc++_shared.so");
+    lightClientLib = ffi.DynamicLibrary.open("libavail_light_2.so");
+    ffi.DynamicLibrary.open("libc++_shared.so");
     super.initState();
   }
 
@@ -68,40 +85,35 @@ class _AvailHomePageState extends State<AvailHomePage> {
     if (isolateActive) {
       return;
     }
-
-    Future isolateRun = Isolate.run(() async {
-      final lightClientLib = DynamicLibrary.open("libavail_light_2.so");
-      DynamicLibrary.open("libc++_shared.so");
-      RunNode function = lightClientLib
-          .lookup<NativeFunction<RunNodeFFI>>("start_light_node")
-          .asFunction();
-      function();
-    }, debugName: "light_node");
-    setState(() {
-      isolateActive = true;
-    });
-    isolateRun.whenComplete(() => setState(() {
+    await rootBundle.loadString('assets/config.toml').then((str) {
+      compute(_startLightClientCall, str).then((_) {
+        setState(() {
           isolateActive = false;
-        }));
+        });
+      });
+      setState(() {
+        isolateActive = true;
+      });
+    });
   }
 
   int _latestBlock() {
     GetBlock function = lightClientLib
-        .lookup<NativeFunction<GetBlockFFI>>("c_latest_unfinalized_block")
+        .lookup<ffi.NativeFunction<GetBlockFFI>>("c_latest_unfinalized_block")
         .asFunction();
     return function();
   }
 
   int _latestFinalizedBlock() {
     GetBlock function = lightClientLib
-        .lookup<NativeFunction<GetBlockFFI>>("c_latest_block")
+        .lookup<ffi.NativeFunction<GetBlockFFI>>("c_latest_block")
         .asFunction();
     return function();
   }
 
   double _confidence(int block) {
     GetConfidence function = lightClientLib
-        .lookup<NativeFunction<GetConfidenceFFI>>("c_confidence")
+        .lookup<ffi.NativeFunction<GetConfidenceFFI>>("c_confidence")
         .asFunction();
     return function(block);
   }
