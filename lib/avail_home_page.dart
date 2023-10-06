@@ -138,6 +138,30 @@ class _AvailHomePageState extends State<AvailHomePage> {
         title: Text(widget.title),
         centerTitle: true,
       ),
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.miniCenterDocked,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 30),
+        child: ElevatedButton(
+          onPressed: _getData,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(right: 8.0),
+                child: Icon(Icons.refresh),
+              ),
+              Text(
+                "Refresh Data",
+                style: smallRowTextStyle.copyWith(
+                    color: Colors.black,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: SingleChildScrollView(
@@ -159,7 +183,7 @@ class _AvailHomePageState extends State<AvailHomePage> {
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
                       child: SizedBox(
-                        width: 200,
+                        width: 180,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -173,8 +197,7 @@ class _AvailHomePageState extends State<AvailHomePage> {
                               ),
                             ),
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              padding: const EdgeInsets.only(left: 8.0),
                               child: Icon(
                                 Icons.stay_current_portrait_rounded,
                                 size: 14.0,
@@ -195,7 +218,7 @@ class _AvailHomePageState extends State<AvailHomePage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text("Finalized Block Confidence", style: smallTextStyle),
+                  Text("Confidence", style: smallTextStyle),
                   Text("$_blockConfidence",
                       style: largeTextStyle.copyWith(fontSize: 40)),
                 ],
@@ -205,14 +228,15 @@ class _AvailHomePageState extends State<AvailHomePage> {
               ),
               Container(
                 decoration: BoxDecoration(
+                  shape: BoxShape.circle,
                   color: Theme.of(context)
                       .colorScheme
                       .inversePrimary
                       .withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.black12,
-                  ),
+                  // borderRadius: BorderRadius.circular(20),
+                  // border: Border.all(
+                  //   color: Colors.black12,
+                  // ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -241,50 +265,7 @@ class _AvailHomePageState extends State<AvailHomePage> {
                           ),
                         ],
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          height: 120,
-                          width: 1,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      Column(
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(bottom: 10.0),
-                            child: Icon(
-                              Icons.timer_rounded,
-                              size: 30,
-                            ),
-                          ),
-                          Text(
-                            "Latest Block",
-                            style: smallRowTextStyle,
-                          ),
-                          Text(
-                            "$_unfinalizedBlock",
-                            style: largeRowTextStyle,
-                          ),
-                        ],
-                      ),
                     ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12.0, vertical: 30),
-                child: Center(
-                  child: ElevatedButton(
-                    onPressed: _getData,
-                    child: Text(
-                      "Refresh Data",
-                      style: smallRowTextStyle.copyWith(
-                          color: Colors.black,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold),
-                    ),
                   ),
                 ),
               ),
