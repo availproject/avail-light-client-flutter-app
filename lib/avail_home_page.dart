@@ -44,7 +44,6 @@ class AvailHomePage extends StatefulWidget {
 class _AvailHomePageState extends State<AvailHomePage> {
   late ffi.DynamicLibrary lightClientLib;
   int _finalizedBlock = 0;
-  int _unfinalizedBlock = 0;
   double _blockConfidence = 0;
   bool isolateActive = false;
   final TextStyle smallTextStyle = const TextStyle(
@@ -96,13 +95,6 @@ class _AvailHomePageState extends State<AvailHomePage> {
     });
   }
 
-  int _latestBlock() {
-    GetBlock function = lightClientLib
-        .lookup<ffi.NativeFunction<GetBlockFFI>>("c_latest_unfinalized_block")
-        .asFunction();
-    return function();
-  }
-
   int _latestFinalizedBlock() {
     GetBlock function = lightClientLib
         .lookup<ffi.NativeFunction<GetBlockFFI>>("c_latest_block")
@@ -119,11 +111,9 @@ class _AvailHomePageState extends State<AvailHomePage> {
 
   _getData() {
     final finalizedBlock = _latestFinalizedBlock();
-    final unfinalizedBlock = _latestBlock();
     final confidence = _confidence(finalizedBlock);
     setState(() {
       _finalizedBlock = finalizedBlock;
-      _unfinalizedBlock = unfinalizedBlock;
       _blockConfidence = confidence;
     });
   }
