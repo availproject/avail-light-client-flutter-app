@@ -10,7 +10,7 @@
  confidence = 92.0
  #bootstraps = [['12D3KooWN39TzfjNxqxbzLVEro5rQFfpibcy9SJXnN594j3xhQ4j', '/dns/gateway-lightnode-001.kate.avail.tools/tcp/37000']]
  #bootstraps = [['12D3KooWN39TzfjNxqxbzLVEro5rQFfpibcy9SJXnN594j3xhQ4j', '/dns/gateway-lightnode-001.kate.avail.tools/tcp/37000']]
- bootstraps = [['12D3KooWNsqxiSLSERs3YMYymErtfWWyGCH1ojhikeiFi71hFKiJ', '/ip4/10.0.2.2/udp/37000/quic-v1']]
+ bootstraps = [['12D3KooWCfqHo4r28hRs4EeQDPPKPJvXo382emx3wYFxm8puVQRW', '/ip4/10.0.2.2/udp/37000/quic-v1']]
  avail_path = '/data/user/0/com.example.avail_light_app/app_flutter'
  log_level = 'INFO'
  log_format_json = false

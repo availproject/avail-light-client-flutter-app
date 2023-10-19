@@ -1,6 +1,5 @@
-import UIKit
-import Flutter
-
+import UIKit;
+import Flutter;
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate {
   override func application(
@@ -10,4 +9,8 @@ import Flutter
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
+}
+public func dummyMethodToEnforceBundling() {
+  // This will never be executed
+    c_latest_block();
 }

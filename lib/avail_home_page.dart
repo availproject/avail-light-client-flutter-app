@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:ffi' as ffi;
+import 'dart:ffi';
+import 'dart:io';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 
@@ -13,20 +16,82 @@ typedef RunNodeFFI = ffi.Bool Function(
   ffi.Pointer<ffi.Uint8> cfg,
 );
 
-typedef GetBlock = int Function();
-typedef GetBlockFFI = ffi.Uint32 Function();
+typedef GetBlock = Pointer<Utf8> Function(
+  ffi.Pointer<ffi.Uint8> cfg,
+);
+typedef GetBlockFFI = Pointer<Utf8> Function(
+  ffi.Pointer<ffi.Uint8> cfg,
+);
 
-typedef GetConfidence = double Function(int);
-typedef GetConfidenceFFI = ffi.Double Function(ffi.Uint32);
-Future<void> _startLightClientCall(String str) async {
-  ffi.Pointer<ffi.Uint8> nativeConfig = str.toNativeUtf8().cast<ffi.Uint8>();
-  final lightClientLib = ffi.DynamicLibrary.open("libavail_light_2.so");
+typedef GetV2Status = Pointer<Utf8> Function(
+  ffi.Pointer<ffi.Uint8> cfg,
+);
+typedef GetV2StatusFfi = Pointer<Utf8> Function(
+  ffi.Pointer<ffi.Uint8> cfg,
+);
 
-  ffi.DynamicLibrary.open("libc++_shared.so");
-  RunNode function = lightClientLib
-      .lookup<ffi.NativeFunction<RunNodeFFI>>("start_light_node")
+typedef GetConfidence = Pointer<Utf8> Function(
+  int,
+  ffi.Pointer<ffi.Uint8> cfg,
+);
+typedef GetConfidenceFFI = Pointer<Utf8> Function(
+  ffi.Uint32,
+  ffi.Pointer<ffi.Uint8> cfg,
+);
+void callbackFunction(Pointer<Utf8> message) {
+  debugPrint("Message: ${message.toDartString()}");
+}
+
+//callback
+typedef RunNodeWithCallback = bool Function(
+    ffi.Pointer<ffi.Uint8> cfg, Pointer<NativeFunction<FfiCallback>>);
+typedef RunNodeWithCallbackFFI = ffi.Bool Function(
+    ffi.Pointer<ffi.Uint8> cfg, Pointer<NativeFunction<FfiCallback>>);
+typedef FfiCallback = Void Function(Pointer<Utf8>);
+
+class IsolateModel {
+  final int callbackPointer;
+  final String config;
+
+  IsolateModel({required this.callbackPointer, required this.config});
+}
+
+// Submit transaction
+
+typedef SubmitTransaction = ffi.Pointer<Utf8> Function(
+  ffi.Pointer<ffi.Uint8> cfg,
+  int appId,
+  ffi.Pointer<ffi.Uint8> data,
+  ffi.Pointer<ffi.Uint8> privateKey,
+);
+typedef SubmitTransactionFfi = ffi.Pointer<Utf8> Function(
+  ffi.Pointer<ffi.Uint8> cfg,
+  ffi.Uint32 appId,
+  ffi.Pointer<ffi.Uint8> data,
+  ffi.Pointer<ffi.Uint8> privateKey,
+);
+
+Future<void> _startLightClientCall(IsolateModel config) async {
+  ffi.Pointer<ffi.Uint8> nativeConfig =
+      config.config.toNativeUtf8().cast<ffi.Uint8>();
+  // final lightClientLib = ffi.DynamicLibrary.open("libavail_light_2.so");
+
+  final lightClientLib = Platform.isAndroid
+      ? DynamicLibrary.open("libavail_light_2.so")
+      : DynamicLibrary.process();
+
+  // ffi.DynamicLibrary.open("libc++_shared.so");
+  // RunNode function = lightClientLib
+  //     .lookup<ffi.NativeFunction<RunNodeFFI>>("start_light_node")
+  //     .asFunction();
+  // function(nativeConfig);
+
+  RunNodeWithCallback function = lightClientLib
+      // .lookup<ffi.NativeFunction<RunNodeWithCallbackFFI>>("start_light_node")
+      .lookup<ffi.NativeFunction<RunNodeWithCallbackFFI>>(
+          "start_light_node_with_callbacks")
       .asFunction();
-  function(nativeConfig);
+  function(nativeConfig, Pointer.fromAddress(config.callbackPointer));
 }
 
 class AvailHomePage extends StatefulWidget {
@@ -43,6 +108,7 @@ class AvailHomePage extends StatefulWidget {
 
 class _AvailHomePageState extends State<AvailHomePage> {
   late ffi.DynamicLibrary lightClientLib;
+  String config = '';
   int _finalizedBlock = 0;
   double _blockConfidence = 0;
   bool isolateActive = false;
@@ -72,8 +138,12 @@ class _AvailHomePageState extends State<AvailHomePage> {
 
   @override
   void initState() {
-    lightClientLib = ffi.DynamicLibrary.open("libavail_light_2.so");
-    ffi.DynamicLibrary.open("libc++_shared.so");
+    // lightClientLib = ffi.DynamicLibrary.open("libavail_light_2.so");
+    // ffi.DynamicLibrary.open("libc++_shared.so");
+    lightClientLib = Platform.isAndroid
+        ? DynamicLibrary.open("libavail_light_2.so")
+        : DynamicLibrary.process();
+
     super.initState();
   }
 
@@ -84,7 +154,13 @@ class _AvailHomePageState extends State<AvailHomePage> {
       return;
     }
     await rootBundle.loadString('assets/config.toml').then((str) {
-      compute(_startLightClientCall, str).then((_) {
+      config = str;
+      final callback = NativeCallable<FfiCallback>.listener(callbackFunction);
+
+      IsolateModel isolateConfig = IsolateModel(
+          callbackPointer: callback.nativeFunction.address, config: config);
+
+      compute(_startLightClientCall, isolateConfig).then((_) {
         setState(() {
           isolateActive = false;
         });
@@ -96,26 +172,69 @@ class _AvailHomePageState extends State<AvailHomePage> {
   }
 
   int _latestFinalizedBlock() {
+    ffi.Pointer<ffi.Uint8> nativeConfig =
+        config.toNativeUtf8().cast<ffi.Uint8>();
+
     GetBlock function = lightClientLib
         .lookup<ffi.NativeFunction<GetBlockFFI>>("c_latest_block")
         .asFunction();
-    return function();
+    String response = function(nativeConfig).toDartString();
+    debugPrint("response $response");
+    return 0;
+  }
+
+  sendTransaction() {
+    ffi.Pointer<ffi.Uint8> nativeConfig =
+        config.toNativeUtf8().cast<ffi.Uint8>();
+    const appId = 0;
+    final data = jsonEncode({"data": "VGVzdCBkYXRhYWE="});
+    const privateKey =
+        "pact source double stadium tourist lake skill ginger scatter age strike purpose";
+    ffi.Pointer<ffi.Uint8> encodedData = data.toNativeUtf8().cast<ffi.Uint8>();
+    ffi.Pointer<ffi.Uint8> encodedPrivateKey =
+        privateKey.toNativeUtf8().cast<ffi.Uint8>();
+
+    final SubmitTransaction function = lightClientLib
+        .lookup<ffi.NativeFunction<SubmitTransactionFfi>>("submit_transaction")
+        .asFunction();
+    String response =
+        function(nativeConfig, appId, encodedData, encodedPrivateKey)
+            .toDartString();
+    debugPrint("response $response");
   }
 
   double _confidence(int block) {
+    ffi.Pointer<ffi.Uint8> nativeConfig =
+        config.toNativeUtf8().cast<ffi.Uint8>();
+
     GetConfidence function = lightClientLib
         .lookup<ffi.NativeFunction<GetConfidenceFFI>>("c_confidence")
         .asFunction();
-    return function(block);
+    String response = function(45, nativeConfig).toDartString();
+    debugPrint("response $response");
+    return 0;
+  }
+
+  _status() {
+    ffi.Pointer<ffi.Uint8> nativeConfig =
+        config.toNativeUtf8().cast<ffi.Uint8>();
+
+    GetV2Status function = lightClientLib
+        .lookup<ffi.NativeFunction<GetV2StatusFfi>>("get_status_v2")
+        .asFunction();
+    String response = function(nativeConfig).toDartString();
+    debugPrint("response $response");
+    return 0;
   }
 
   _getData() {
-    final finalizedBlock = _latestFinalizedBlock();
-    final confidence = _confidence(finalizedBlock);
-    setState(() {
-      _finalizedBlock = finalizedBlock;
-      _blockConfidence = confidence;
-    });
+    // final finalizedBlock = _latestFinalizedBlock();
+    // final confidence = _confidence(finalizedBlock);
+    // setState(() {
+    //   _finalizedBlock = finalizedBlock;
+    //   _blockConfidence = confidence;
+    // });
+    _status();
   }
 
   @override
@@ -173,7 +292,7 @@ class _AvailHomePageState extends State<AvailHomePage> {
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
                       child: SizedBox(
-                        width: 180,
+                        width: 185,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
