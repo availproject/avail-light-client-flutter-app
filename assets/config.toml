@@ -4,13 +4,14 @@
  libp2p_tcp_port_reuse = false
  libp2p_autonat_only_global_ips = false
  full_node_rpc= ['http://127.0.0.1:9933']
+ app_id = 0
  # full_node_ws = ['ws://127.0.0.1:9944']
- #full_node_ws = ['wss://biryani-devnet.avail.tools:443/ws']
+#  full_node_ws = ['wss://biryani-devnet.avail.tools:443/ws']
  full_node_ws = ['ws://10.0.2.2:9944']
  confidence = 92.0
  #bootstraps = [['12D3KooWN39TzfjNxqxbzLVEro5rQFfpibcy9SJXnN594j3xhQ4j', '/dns/gateway-lightnode-001.kate.avail.tools/tcp/37000']]
  #bootstraps = [['12D3KooWN39TzfjNxqxbzLVEro5rQFfpibcy9SJXnN594j3xhQ4j', '/dns/gateway-lightnode-001.kate.avail.tools/tcp/37000']]
- bootstraps = [['12D3KooWCfqHo4r28hRs4EeQDPPKPJvXo382emx3wYFxm8puVQRW', '/ip4/10.0.2.2/udp/37000/quic-v1']]
+ bootstraps = [['12D3KooWP4ueUy9ZKk4SYDQBQWPZvkJmrsf492KpakhWwVKRGAAB', '/ip4/10.0.2.2/udp/37000/quic-v1']]
  avail_path = '/data/user/0/com.example.avail_light_app/app_flutter'
  log_level = 'INFO'
  log_format_json = false

@@ -9,10 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
-typedef RunNode = bool Function(
+typedef RunNode = Pointer<Utf8> Function(
   ffi.Pointer<ffi.Uint8> cfg,
 );
-typedef RunNodeFFI = ffi.Bool Function(
+typedef RunNodeFFI = Pointer<Utf8> Function(
   ffi.Pointer<ffi.Uint8> cfg,
 );
 
@@ -30,6 +30,15 @@ typedef GetV2StatusFfi = Pointer<Utf8> Function(
   ffi.Pointer<ffi.Uint8> cfg,
 );
 
+typedef GetStatus = Pointer<Utf8> Function(
+  int,
+  ffi.Pointer<ffi.Uint8> cfg,
+);
+typedef GetStatusFfi = Pointer<Utf8> Function(
+  Int,
+  ffi.Pointer<ffi.Uint8> cfg,
+);
+
 typedef GetConfidence = Pointer<Utf8> Function(
   int,
   ffi.Pointer<ffi.Uint8> cfg,
@@ -43,9 +52,9 @@ void callbackFunction(Pointer<Utf8> message) {
 }
 
 //callback
-typedef RunNodeWithCallback = bool Function(
+typedef RunNodeWithCallback = Pointer<Utf8> Function(
     ffi.Pointer<ffi.Uint8> cfg, Pointer<NativeFunction<FfiCallback>>);
-typedef RunNodeWithCallbackFFI = ffi.Bool Function(
+typedef RunNodeWithCallbackFFI = ffi.Pointer<Utf8> Function(
     ffi.Pointer<ffi.Uint8> cfg, Pointer<NativeFunction<FfiCallback>>);
 typedef FfiCallback = Void Function(Pointer<Utf8>);
 
@@ -80,18 +89,20 @@ Future<void> _startLightClientCall(IsolateModel config) async {
       ? DynamicLibrary.open("libavail_light_2.so")
       : DynamicLibrary.process();
 
-  // ffi.DynamicLibrary.open("libc++_shared.so");
-  // RunNode function = lightClientLib
-  //     .lookup<ffi.NativeFunction<RunNodeFFI>>("start_light_node")
-  //     .asFunction();
-  // function(nativeConfig);
-
-  RunNodeWithCallback function = lightClientLib
-      // .lookup<ffi.NativeFunction<RunNodeWithCallbackFFI>>("start_light_node")
-      .lookup<ffi.NativeFunction<RunNodeWithCallbackFFI>>(
-          "start_light_node_with_callbacks")
+  ffi.DynamicLibrary.open("libc++_shared.so");
+  RunNode function = lightClientLib
+      .lookup<ffi.NativeFunction<RunNodeFFI>>("startLightNode")
       .asFunction();
-  function(nativeConfig, Pointer.fromAddress(config.callbackPointer));
+  var resp = function(nativeConfig);
+  print("${resp.toDartString()}");
+  // RunNodeWithCallback function = lightClientLib
+  //     // .lookup<ffi.NativeFunction<RunNodeWithCallbackFFI>>("start_light_node")
+  //     .lookup<ffi.NativeFunction<RunNodeWithCallbackFFI>>(
+  //         "startLightNodeWithCallback")
+  //     .asFunction();
+  // var resp =
+  //     function(nativeConfig, Pointer.fromAddress(config.callbackPointer));
+  // print("${resp.toDartString()}");
 }
 
 class AvailHomePage extends StatefulWidget {
@@ -176,11 +187,12 @@ class _AvailHomePageState extends State<AvailHomePage> {
         config.toNativeUtf8().cast<ffi.Uint8>();
 
     GetBlock function = lightClientLib
-        .lookup<ffi.NativeFunction<GetBlockFFI>>("c_latest_block")
+        .lookup<ffi.NativeFunction<GetBlockFFI>>("latestBlock")
         .asFunction();
-    String response = function(nativeConfig).toDartString();
+    Map<dynamic, dynamic> response =
+        jsonDecode(function(nativeConfig).toDartString());
     debugPrint("response $response");
-    return 0;
+    return response['latest_block'];
   }
 
   sendTransaction() {
@@ -195,7 +207,7 @@ class _AvailHomePageState extends State<AvailHomePage> {
         privateKey.toNativeUtf8().cast<ffi.Uint8>();
 
     final SubmitTransaction function = lightClientLib
-        .lookup<ffi.NativeFunction<SubmitTransactionFfi>>("submit_transaction")
+        .lookup<ffi.NativeFunction<SubmitTransactionFfi>>("submitTransaction")
         .asFunction();
     String response =
         function(nativeConfig, appId, encodedData, encodedPrivateKey)
@@ -208,9 +220,22 @@ class _AvailHomePageState extends State<AvailHomePage> {
         config.toNativeUtf8().cast<ffi.Uint8>();
 
     GetConfidence function = lightClientLib
-        .lookup<ffi.NativeFunction<GetConfidenceFFI>>("c_confidence")
+        .lookup<ffi.NativeFunction<GetConfidenceFFI>>("confidence")
         .asFunction();
-    String response = function(45, nativeConfig).toDartString();
+    Map<dynamic, dynamic> response =
+        jsonDecode(function(45, nativeConfig).toDartString());
+    debugPrint("response $response");
+    return response['confidence'];
+  }
+
+  _statusV2() {
+    ffi.Pointer<ffi.Uint8> nativeConfig =
+        config.toNativeUtf8().cast<ffi.Uint8>();
+
+    GetV2Status function = lightClientLib
+        .lookup<ffi.NativeFunction<GetV2StatusFfi>>("getStatusV2")
+        .asFunction();
+    String response = function(nativeConfig).toDartString();
     debugPrint("response $response");
     return 0;
   }
@@ -219,22 +244,25 @@ class _AvailHomePageState extends State<AvailHomePage> {
     ffi.Pointer<ffi.Uint8> nativeConfig =
         config.toNativeUtf8().cast<ffi.Uint8>();
 
-    GetV2Status function = lightClientLib
-        .lookup<ffi.NativeFunction<GetV2StatusFfi>>("get_status_v2")
+    GetStatus function = lightClientLib
+        .lookup<ffi.NativeFunction<GetStatusFfi>>("status")
         .asFunction();
-    String response = function(nativeConfig).toDartString();
+    String response = function(0, nativeConfig).toDartString();
     debugPrint("response $response");
     return 0;
   }
 
   _getData() {
-    // final finalizedBlock = _latestFinalizedBlock();
-    // final confidence = _confidence(finalizedBlock);
-    // setState(() {
-    //   _finalizedBlock = finalizedBlock;
-    //   _blockConfidence = confidence;
-    // });
-    _status();
+    final finalizedBlock = _latestFinalizedBlock();
+    final confidence = _confidence(finalizedBlock);
+    setState(() {
+      _finalizedBlock = finalizedBlock;
+      _blockConfidence = confidence;
+    });
+    // _latestFinalizedBlock();
+    // _confidence(101);
+    // _statusV2();
+    // sendTransaction();
   }
 
   @override

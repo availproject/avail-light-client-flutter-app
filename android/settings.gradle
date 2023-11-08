@@ -12,9 +12,12 @@ pluginManagement {
 
     plugins {
         id "dev.flutter.flutter-gradle-plugin" version "1.0.0" apply false
+        id 'com.android.application' version '7.3.0'
+        id 'org.jetbrains.kotlin.android' version '1.7.10'
     }
 }
 
 include ":app"
 
 apply from: "${settings.ext.flutterSdkPath}/packages/flutter_tools/gradle/app_plugin_loader.gradle"
+include ':availlightclient'
