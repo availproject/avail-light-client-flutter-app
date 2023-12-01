@@ -1,5 +1,5 @@
  http_server_host = '127.0.0.1'
- http_server_port = '7000'
+ http_server_port = 7000
  libp2p_port = '37000'
  libp2p_tcp_port_reuse = false
  libp2p_autonat_only_global_ips = false
@@ -11,7 +11,7 @@
  confidence = 92.0
  #bootstraps = [['12D3KooWN39TzfjNxqxbzLVEro5rQFfpibcy9SJXnN594j3xhQ4j', '/dns/gateway-lightnode-001.kate.avail.tools/tcp/37000']]
  #bootstraps = [['12D3KooWN39TzfjNxqxbzLVEro5rQFfpibcy9SJXnN594j3xhQ4j', '/dns/gateway-lightnode-001.kate.avail.tools/tcp/37000']]
- bootstraps = [['12D3KooWP4ueUy9ZKk4SYDQBQWPZvkJmrsf492KpakhWwVKRGAAB', '/ip4/10.0.2.2/udp/37000/quic-v1']]
+ bootstraps = [['12D3KooWStAKPADXqJ7cngPYXd2mSANpdgh1xQ34aouufHA2xShz', '/ip4/10.0.2.2/udp/38000/quic-v1/p2p/12D3KooWStAKPADXqJ7cngPYXd2mSANpdgh1xQ34aouufHA2xShz']]
  avail_path = '/data/user/0/com.example.avail_light_app/app_flutter'
  log_level = 'INFO'
  log_format_json = false
